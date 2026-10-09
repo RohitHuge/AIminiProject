@@ -1,0 +1,21 @@
+{
+  "name": "ai-interactive-learning-demonstrator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Voice-driven AI tutor that generates interactive learning simulations",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,green \"npm run dev --workspace @ail/server\" \"npm run dev --workspace @ail/web\"",
+    "dev:all": "concurrently -n server,web,voice -c blue,green,magenta \"npm run dev --workspace @ail/server\" \"npm run dev --workspace @ail/web\" \"npm --prefix voice run dev\"",
+    "dev:server": "npm run dev --workspace @ail/server",
+    "dev:web": "npm run dev --workspace @ail/web",
+    "dev:voice": "npm --prefix voice run dev",
+    "test:server": "npm run test --workspace @ail/server",
+    "typecheck": "npm run typecheck --workspace @ail/server"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
+  }
+}

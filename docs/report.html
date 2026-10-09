@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>AI Interactive Learning Demonstrator — Project Report</title>
+<style>
+  :root {
+    --ink: #1a202c;
+    --muted: #4a5568;
+    --faint: #718096;
+    --accent: #2b6cb0;
+    --accent-soft: #ebf4ff;
+    --line: #cbd5e0;
+    --code-bg: #f7fafc;
+    --ok: #2f855a;
+    --todo: #c05621;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    line-height: 1.55;
+    font-size: 11.5px;
+    margin: 0;
+  }
+  h1, h2, h3, h4 { line-height: 1.25; color: var(--ink); }
+  h2 {
+    font-size: 19px; margin: 0 0 10px; padding-bottom: 6px;
+    border-bottom: 2px solid var(--accent); color: var(--accent);
+  }
+  h3 { font-size: 14.5px; margin: 18px 0 6px; }
+  h4 { font-size: 12.5px; margin: 14px 0 4px; color: var(--muted); }
+  p { margin: 6px 0; }
+  ul, ol { margin: 6px 0 6px 0; padding-left: 20px; }
+  li { margin: 3px 0; }
+  code {
+    font-family: "Cascadia Code", Consolas, monospace;
+    background: var(--code-bg); padding: 1px 4px; border-radius: 3px;
+    font-size: 10.5px; color: #c53030;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: 6px; padding: 10px 12px; overflow-x: auto;
+    font-family: "Cascadia Code", Consolas, monospace; font-size: 10px;
+    line-height: 1.4; color: #2d3748; white-space: pre;
+  }
+  pre code { background: none; color: #2d3748; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 10.5px; }
+  th, td { border: 1px solid var(--line); padding: 6px 9px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  tr:nth-child(even) td { background: #fafbfc; }
+  .section { padding: 26px 40px; }
+  .page-break { page-break-before: always; }
+  .lead { font-size: 12.5px; color: var(--muted); }
+  .tag {
+    display: inline-block; font-size: 9.5px; font-weight: 600;
+    padding: 1px 7px; border-radius: 10px; vertical-align: middle;
+  }
+  .tag-ok { background: #c6f6d5; color: var(--ok); }
+  .tag-todo { background: #feebc8; color: var(--todo); }
+  .callout {
+    background: var(--accent-soft); border-left: 4px solid var(--accent);
+    padding: 8px 14px; margin: 12px 0; border-radius: 0 6px 6px 0;
+  }
+  .callout.warn { background: #fffaf0; border-left-color: var(--todo); }
+  .muted { color: var(--faint); }
+  .kv { display: grid; grid-template-columns: 150px 1fr; gap: 2px 14px; margin: 10px 0; }
+  .kv dt { font-weight: 600; color: var(--muted); }
+  .kv dd { margin: 0; }
+
+  /* Cover */
+  .cover {
+    height: 100vh; display: flex; flex-direction: column; justify-content: center;
+    padding: 0 60px; page-break-after: always;
+    background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%); color: #fff;
+  }
+  .cover h1 { color: #fff; font-size: 40px; margin: 0 0 12px; line-height: 1.1; }
+  .cover .sub { font-size: 17px; color: #bee3f8; margin-bottom: 40px; }
+  .cover .meta { font-size: 12px; color: #e2e8f0; }
+  .cover .pill {
+    display: inline-block; background: rgba(255,255,255,0.15);
+    padding: 4px 12px; border-radius: 14px; font-size: 11px; margin-bottom: 24px;
+  }
+  @page { size: A4; margin: 14mm 0; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="pill">Mini-Project / Technical Demonstrator</div>
+  <h1>AI Interactive Learning<br/>Demonstrator</h1>
+  <div class="sub">A voice-driven AI tutor that builds interactive learning simulations on demand</div>
+  <div class="meta">
+    Project Report &nbsp;•&nbsp; Concept, Architecture &amp; Technology<br/>
+    Prepared as reference documentation for report authoring
+  </div>
+</div>
+
+<!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+<div class="section">
+  <h2>1. Executive Summary</h2>
+  <p class="lead">
+    The AI Interactive Learning Demonstrator is a web application that lets a student
+    <strong>talk to an AI tutor about something they don't understand</strong>, and — instead of
+    merely explaining it — the system <strong>generates a custom, interactive simulation</strong>
+    tailored to that exact confusion, then renders it live in the browser for the student to
+    experiment with.
+  </p>
+  <p>
+    The core innovation is the pipeline that converts a natural, roughly two-minute spoken
+    conversation into a structured <em>Learning Brief</em>, and then uses an AI coding agent to
+    write a self-contained HTML / CSS / JavaScript simulation targeted at the student's specific
+    misunderstanding. The result is served by the backend and displayed inside a security-sandboxed
+    frame.
+  </p>
+  <div class="callout">
+    <strong>The one-line pitch:</strong> "Talk to an AI tutor, and instead of just explaining the
+    concept, it builds an interactive experiment for you."
+  </div>
+  <h3>What makes it different</h3>
+  <p>
+    A typical AI tutor answers questions with text. This project answers with a <em>manipulable
+    demonstration</em> — sliders, animations, live values, draggable points — because many concepts
+    (Newton's laws, derivatives, sorting algorithms) are understood far better by interacting with
+    them than by reading about them.
+  </p>
+</div>
+
+<!-- ============ 2. THE IDEA ============ -->
+<div class="section">
+  <h2>2. The Idea &amp; Concept</h2>
+
+  <h3>The problem</h3>
+  <p>
+    When a student is stuck, a generic explanation often misses the actual point of confusion.
+    Understanding is also highly individual — one student needs to <em>see</em> motion, another needs
+    the equation. Static answers can't adapt to that.
+  </p>
+
+  <h3>The solution — a generative learning loop</h3>
+  <p>
+    The system discovers the student's precise learning need through conversation, distills it into a
+    compact brief, and generates a fresh interactive artifact for that need. Every student gets a
+    bespoke demonstration rather than a canned lesson.
+  </p>
+
+  <h3>End-to-end user journey</h3>
+  <pre>🎙  Talk   →   🧠 Understand   →   ⚙ Build   →   ✓ Ready   →   🧪 Experiment   →   💬 Ask follow-up</pre>
+
+  <h3>Scope: a convincing demonstrator</h3>
+  <p>
+    This is deliberately a <strong>mini-project / demonstrator</strong>, not a production platform.
+    Engineering effort is concentrated on the critical path (voice → brief → generation → render),
+    and explicitly excludes authentication, databases, cloud storage, multi-tenancy, payments, and
+    heavy sandbox infrastructure.
+  </p>
+</div>
+
+<!-- ============ 3. HOW IT WORKS ============ -->
+<div class="section page-break">
+  <h2>3. How It Works — The Pipeline</h2>
+  <p>The entire product is one data pipeline. Each stage has a single, well-defined responsibility:</p>
+  <pre>
+   Student
+      │  speaks naturally (~2 minutes)
+      ▼
+   LiveKit Voice Agent  ──────────  listens, asks follow-ups, identifies the confusion
+      │
+      ▼
+   Learning Brief (JSON)  ────────  compact structured summary of the learning need
+      │
+      ▼
+   OpenAI Generation Agent  ──────  writes index.html + style.css + app.js via file tools
+      │
+      ▼
+   Validation + Self-Correction ──  checks files; feeds errors back; up to 3 attempts
+      │
+      ▼
+   Static Simulation Server  ─────  serves the generated files per session
+      │
+      ▼
+   Sandboxed &lt;iframe&gt;  ──────────  student interacts with the live simulation
+      │
+      ▼
+   Follow-up conversation  ───────  student keeps asking; can regenerate</pre>
+
+  <h3>Why the Learning Brief matters</h3>
+  <p>
+    The brief is the contract between the voice side and the generation side. Because it is plain
+    structured JSON, the two halves are <strong>decoupled</strong>: the fragile, external voice layer
+    can fail or be swapped without affecting the generation pipeline, and a brief can even be typed in
+    by hand as a fallback.
+  </p>
+</div>
+
+<!-- ============ 4. ARCHITECTURE ============ -->
+<div class="section">
+  <h2>4. System Architecture</h2>
+  <pre>
+                         ┌─────────────────────────┐
+                         │      React Frontend      │
+                         │                          │
+                         │  Voice UI · Conversation │
+                         │  Generation Progress     │
+                         │  Simulation Viewer       │
+                         │  History                 │
+                         └───────────┬──────────────┘
+                                     │  HTTP (REST + polling)  /  WebSocket (voice)
+                         ┌───────────▼──────────────┐
+                         │       Node Backend        │
+                         │                           │
+                         │  Session Manager          │
+                         │  Artifact (file) Tools    │
+                         │  Generation Service       │
+                         │  Validation Engine        │
+                         │  Simulation Server        │
+                         └──────┬──────────────┬─────┘
+                                │              │
+                   ┌────────────┘              └──────────────┐
+                   ▼                                          ▼
+          ┌──────────────────┐                     ┌────────────────────┐
+          │  LiveKit Agent   │                     │  OpenAI Agent      │
+          │  (OpenAI Realtime)│                     │  (Agents SDK)      │
+          │  STT · LLM · TTS │                     │  Code generation   │
+          │  → Learning Brief│                     │  Self-correction   │
+          └──────────────────┘                     └─────────┬──────────┘
+                                                             ▼
+                                                   ┌──────────────────┐
+                                                   │  Session Files   │
+                                                   │  session.json    │
+                                                   │  learning-brief  │
+                                                   │  simulation/*    │
+                                                   └──────────────────┘</pre>
+  <p class="muted">
+    All secrets (OpenAI key, LiveKit secret) live only on the backend. The browser never receives
+    them; for voice it receives only a short-lived LiveKit room token minted server-side.
+  </p>
+</div>
+
+<!-- ============ 5. TECH STACK ============ -->
+<div class="section page-break">
+  <h2>5. Technology Stack</h2>
+  <p>A key simplification: using <strong>OpenAI for both voice and generation</strong> means the whole
+  system needs only one AI provider.</p>
+  <table>
+    <tr><th>Layer</th><th>Technology</th><th>Why</th></tr>
+    <tr><td><strong>Frontend</strong></td><td>React + Vite + TypeScript + Tailwind CSS + Framer Motion</td><td>Fast dev loop, typed UI, utility styling, smooth microinteractions</td></tr>
+    <tr><td><strong>Backend</strong></td><td>Node.js + TypeScript + Fastify</td><td>Lightweight, high-performance HTTP server with first-class TypeScript and static-file support</td></tr>
+    <tr><td><strong>Voice</strong></td><td>LiveKit + LiveKit Agents + OpenAI Realtime API</td><td>Real-time audio transport; Realtime does speech-to-text, reasoning and text-to-speech in one model</td></tr>
+    <tr><td><strong>AI Generation</strong></td><td>OpenAI Agents SDK (<code>@openai/agents</code>) + Zod</td><td>Agent loop with typed, schema-validated tool calls for safe file operations</td></tr>
+    <tr><td><strong>Generated output</strong></td><td>HTML, CSS, vanilla JavaScript, SVG, Canvas</td><td>Self-contained, no build step, no external dependencies — runs anywhere</td></tr>
+    <tr><td><strong>Storage</strong></td><td>Filesystem (one folder per session)</td><td>No database needed for a demonstrator; trivially inspectable</td></tr>
+    <tr><td><strong>Runtime</strong></td><td>tsx (TypeScript execution)</td><td>Run TypeScript directly, no separate build step during development</td></tr>
+    <tr><td><strong>Validation</strong></td><td>Node <code>vm</code> module + regex scanning</td><td>In-process JS syntax check and security scan without executing untrusted code</td></tr>
+  </table>
+
+  <h3>Why OpenAI Realtime for voice</h3>
+  <ul>
+    <li>One model handles STT + reasoning + TTS → one API, one key, one websocket.</li>
+    <li>Supports structured <em>tool/function calls</em>, so the agent emits the Learning Brief as
+        validated JSON instead of free-form text that must be parsed.</li>
+    <li>No separate speech vendors (e.g. Deepgram/ElevenLabs) to configure.</li>
+  </ul>
+</div>
+
+<!-- ============ 6. PROJECT STRUCTURE ============ -->
+<div class="section">
+  <h2>6. Repository Structure</h2>
+  <pre>
+AIminiProject/
+├── apps/
+│   ├── web/                     React + Vite frontend (Phase 5)
+│   │   └── src/
+│   │       ├── pages/           Home · Session · History
+│   │       ├── components/      VoicePanel · SimulationViewer · GenerationProgress
+│   │       ├── hooks/           useSession · useGenerationStatus · useLiveKit
+│   │       └── lib/             API client
+│   └── server/                  Fastify backend (built, Phases 1–4)
+│       └── src/
+│           ├── routes/          sessions · generation · simulations
+│           ├── sessions/        session manager + learning-brief storage
+│           ├── agents/          generation agent · tools · system prompt · mock
+│           ├── artifacts/       path guard (security) + file tools
+│           ├── validation/      validator + self-correction loop
+│           ├── services/        generation orchestration + status
+│           └── server.ts
+├── voice/                       LiveKit Agents worker (Phase 6)
+├── sessions/                    runtime session data (git-ignored)
+├── .env.example
+└── package.json                 npm workspaces monorepo</pre>
+</div>
+
+<!-- ============ 7. CORE COMPONENTS ============ -->
+<div class="section page-break">
+  <h2>7. Core Components &amp; Implementation</h2>
+
+  <h3>7.1 Session Manager <span class="tag tag-ok">Built</span></h3>
+  <p>
+    Every interaction is a <em>session</em> stored as a folder on disk. The manager creates sessions
+    with unique IDs (<code>session_&lt;6 hex&gt;</code>), writes <code>session.json</code> metadata, and
+    lists history by scanning the sessions directory — no database required.
+  </p>
+
+  <h3>7.2 Path-Safe Artifact Tools <span class="tag tag-ok">Built</span></h3>
+  <p>
+    The generation agent manipulates files through five tools — <code>list_files</code>,
+    <code>read_file</code>, <code>write_file</code>, <code>update_file</code>,
+    <code>delete_file</code> — but every path is forced through a <strong>path guard</strong>. This is
+    the project's central security boundary.
+  </p>
+  <ul>
+    <li>All paths resolve against <code>sessions/&lt;id&gt;/simulation/</code> and may never escape it.</li>
+    <li>Rejects <code>..</code> traversal, absolute paths, Windows drive paths, null bytes, and symlink escapes.</li>
+    <li>The session ID is bound in a closure — it is <em>not</em> a model-supplied parameter — so the AI cannot choose or tamper with which session it writes to.</li>
+  </ul>
+
+  <h3>7.3 Generation Agent <span class="tag tag-ok">Built</span></h3>
+  <p>
+    Built on the OpenAI Agents SDK. Given a Learning Brief, it is instructed (via a strong
+    "Educational Simulation Engineer" system prompt) to create an <strong>interactive demonstration</strong>
+    — not a page of text — using only HTML, CSS, vanilla JS, SVG and Canvas, with no external
+    libraries or network calls. It writes the files through the guarded tools, then inspects and
+    fixes its own work before finishing.
+  </p>
+
+  <h3>7.4 Validation + Self-Correction <span class="tag tag-ok">Built</span></h3>
+  <p>After generation, the files are validated:</p>
+  <ul>
+    <li><strong>Existence:</strong> <code>index.html</code>, <code>style.css</code>, <code>app.js</code> must all exist.</li>
+    <li><strong>References:</strong> the HTML must link the CSS and the JS.</li>
+    <li><strong>Syntax:</strong> <code>app.js</code> is compile-checked in-process via Node's <code>vm</code> module (no execution).</li>
+    <li><strong>Security scan:</strong> flags <code>fetch</code>, <code>XMLHttpRequest</code>, <code>WebSocket</code>, <code>eval</code>, <code>new Function</code>, and any external script/stylesheet.</li>
+  </ul>
+  <p>
+    If validation fails, the errors are fed back to the agent, which reads and repairs the files.
+    This loops a maximum of <strong>3 attempts</strong>; if it still fails, the session is marked as
+    an error and the user is shown a friendly retry message.
+  </p>
+
+  <h3>7.5 Static Simulation Server <span class="tag tag-ok">Built</span></h3>
+  <p>
+    Serves <code>GET /simulations/:sessionId/*</code> directly from the session's
+    <code>simulation/</code> folder, through the same path guard, with correct content types. The real
+    filesystem path is never exposed to the client.
+  </p>
+
+  <h3>7.6 Rendering — Sandboxed iframe <span class="tag tag-todo">Phase 5</span></h3>
+  <p>
+    The React app loads the simulation URL inside
+    <code>&lt;iframe sandbox="allow-scripts"&gt;</code>. Generated code is treated as untrusted: it runs
+    isolated, cannot reach the parent app, cannot make network requests, and is never injected via
+    <code>dangerouslySetInnerHTML</code>.
+  </p>
+</div>
+
+<!-- ============ 8. SECURITY ============ -->
+<div class="section">
+  <h2>8. Security Design</h2>
+  <p>Because the system runs AI-generated code, security is layered deliberately:</p>
+  <table>
+    <tr><th>Concern</th><th>Mitigation</th></tr>
+    <tr><td>Agent escaping the session folder</td><td>Path guard: rejects traversal, absolute paths, symlinks; confined to <code>simulation/</code></td></tr>
+    <tr><td>Agent choosing the wrong session</td><td>Session ID bound in closure, never a tool parameter</td></tr>
+    <tr><td>Malicious generated JavaScript</td><td>Validation security scan + sandboxed iframe (<code>allow-scripts</code> only)</td></tr>
+    <tr><td>Generated code calling the network</td><td>Scan rejects fetch/XHR/WebSocket; iframe sandbox blocks same-origin access</td></tr>
+    <tr><td>Secret leakage to the browser</td><td>OpenAI key &amp; LiveKit secret are server-only; frontend gets a short-lived room token</td></tr>
+    <tr><td>Exposing server internals</td><td>Errors logged server-side; students see friendly messages, never stack traces</td></tr>
+  </table>
+</div>
+
+<!-- ============ 9. DATA CONTRACTS ============ -->
+<div class="section page-break">
+  <h2>9. Data Contracts</h2>
+
+  <h3>Session metadata — <code>session.json</code></h3>
+  <pre><code>{
+  "id": "session_8f2c91",
+  "createdAt": "2026-10-08T14:30:00.000Z",
+  "status": "ready",
+  "subject": "Physics",
+  "topic": "Newton's Second Law",
+  "simulation": { "status": "ready", "entryPoint": "simulation/index.html" }
+}</code></pre>
+  <p class="muted">Status lifecycle: created → conversation → understanding → generating → validating → ready / error</p>
+
+  <h3>Learning Brief — <code>learning-brief.json</code></h3>
+  <pre><code>{
+  "subject": "Physics",
+  "topic": "Newton's Second Law",
+  "studentLevel": "beginner",
+  "studentAlreadyUnderstands": ["force", "mass"],
+  "confusion": "How changing mass or force affects acceleration.",
+  "learningGoal": "Understand the relationship between force, mass and acceleration.",
+  "preferredDemonstration": "Interactive visual physics simulation",
+  "requiredInteractions": ["change force", "change mass", "observe acceleration"]
+}</code></pre>
+
+  <h3>Generation status (polled during generation)</h3>
+  <pre><code>{ "status": "generating", "step": "creating_files",
+  "message": "Building interactive simulation..." }</code></pre>
+  <p class="muted">Steps: understanding → planning → creating_files → validating → fixing → ready / error</p>
+</div>
+
+<!-- ============ 10. API ============ -->
+<div class="section">
+  <h2>10. Backend API Reference</h2>
+  <table>
+    <tr><th>Method &amp; Path</th><th>Purpose</th></tr>
+    <tr><td><code>POST /api/sessions</code></td><td>Create a new session → returns <code>{ sessionId }</code></td></tr>
+    <tr><td><code>GET /api/sessions</code></td><td>List session history (newest first)</td></tr>
+    <tr><td><code>GET /api/sessions/:id</code></td><td>Get session metadata</td></tr>
+    <tr><td><code>POST /api/sessions/:id/learning-brief</code></td><td>Store / update the Learning Brief</td></tr>
+    <tr><td><code>POST /api/sessions/:id/generate</code></td><td>Start async generation (returns immediately)</td></tr>
+    <tr><td><code>GET /api/sessions/:id/status</code></td><td>Poll generation progress</td></tr>
+    <tr><td><code>GET /api/sessions/:id/simulation</code></td><td>Simulation metadata <code>{ ready, url }</code></td></tr>
+    <tr><td><code>GET /simulations/:id/*</code></td><td>Serve generated simulation files (path-guarded)</td></tr>
+    <tr><td><code>POST /api/livekit/token</code> <span class="tag tag-todo">Phase 6</span></td><td>Mint short-lived LiveKit room token</td></tr>
+  </table>
+  <div class="callout">
+    <strong>Async generation:</strong> <code>POST /generate</code> returns right away; the frontend polls
+    <code>/status</code> every 1–2 seconds. No WebSocket is introduced just for generation progress —
+    LiveKit already handles the real-time voice channel.
+  </div>
+</div>
+
+<!-- ============ 11. EXAMPLE SIMULATION ============ -->
+<div class="section">
+  <h2>11. Example Generated Simulation</h2>
+  <p>
+    For a Newton's Second Law brief, the agent produces a draggable physics demo. The student changes
+    <em>Force</em> and <em>Mass</em> with sliders and immediately sees acceleration and the box's
+    motion respond — reinforcing <code>F = m × a</code> through experimentation rather than text.
+  </p>
+  <pre>
+   Force  [────────●────]  40 N
+   Mass   [────●────────]  10 kg
+
+        ⟵── ┌─────────┐
+             │   BOX   │ ───────────→   (animated)
+             └─────────┘
+
+   Force: 40 N   ·   Mass: 10 kg   ·   Acceleration: 4.0 m/s²
+
+   Increase force → acceleration ↑ · box speeds up
+   Increase mass  → acceleration ↓ · box slows down</pre>
+  <p class="muted">
+    Other subjects map to other visual forms: Mathematics → SVG graphs with draggable points;
+    Chemistry → animated particle diagrams; Computer Science → animated sorting / data-structure steps.
+  </p>
+</div>
+
+<!-- ============ 12. STATUS & ROADMAP ============ -->
+<div class="section page-break">
+  <h2>12. Implementation Status &amp; Roadmap</h2>
+  <p>Development follows a critical-path-first order, so the core value is proven before UI and voice polish.</p>
+  <table>
+    <tr><th>Phase</th><th>Deliverable</th><th>Status</th></tr>
+    <tr><td>1</td><td>Monorepo scaffold + session CRUD (filesystem storage)</td><td><span class="tag tag-ok">Complete</span></td></tr>
+    <tr><td>2</td><td>Path-safe artifact file tools (security boundary)</td><td><span class="tag tag-ok">Complete</span></td></tr>
+    <tr><td>3</td><td>Generation agent + static simulation server</td><td><span class="tag tag-ok">Complete</span></td></tr>
+    <tr><td>4</td><td>Full validation + 3-attempt self-correction loop</td><td><span class="tag tag-ok">Complete</span></td></tr>
+    <tr><td>5</td><td>React frontend: Home / Session / History, sandboxed iframe, generation-progress UI, typed-brief fallback</td><td><span class="tag tag-todo">Remaining</span></td></tr>
+    <tr><td>6</td><td>Voice: LiveKit + OpenAI Realtime, token endpoint, 2-minute discovery → Learning Brief</td><td><span class="tag tag-todo">Remaining</span></td></tr>
+    <tr><td>7</td><td>Polish: history reopen, accessibility, microinteractions, README</td><td><span class="tag tag-todo">Remaining</span></td></tr>
+  </table>
+  <p>
+    <strong>Verification so far:</strong> the backend passes a 17-test automated suite (path-guard
+    security, validation rules, and the self-correction loop) plus an end-to-end pipeline check that
+    drives a brief through generation to a served, validated simulation.
+  </p>
+  <div class="callout warn">
+    <strong>Design choice — voice last:</strong> voice is the most fragile, externally-dependent piece,
+    so it is built last and a typed-brief fallback is kept permanently. A LiveKit outage can never
+    block the core demonstration.
+  </div>
+</div>
+
+<!-- ============ 13. HOW TO RUN ============ -->
+<div class="section">
+  <h2>13. How to Run (current backend)</h2>
+  <div class="kv">
+    <dt>Prerequisites</dt><dd>Node.js 22+, npm 10+</dd>
+    <dt>Install</dt><dd><code>npm install</code></dd>
+    <dt>Run backend</dt><dd><code>npm run dev:server</code> → serves on <code>http://localhost:3001</code></dd>
+    <dt>Run tests</dt><dd><code>npm run test:server</code> (17 tests) &nbsp;·&nbsp; <code>npm run typecheck</code></dd>
+    <dt>Config</dt><dd>Copy <code>.env.example</code> → <code>.env</code>; set <code>OPENAI_API_KEY</code> for live generation</dd>
+  </div>
+  <div class="callout">
+    <strong>Offline demo mode:</strong> with no <code>OPENAI_API_KEY</code>, generation falls back to a
+    built-in interactive Newton's Second Law simulation, so the full pipeline (generate → validate →
+    serve → render) can be demonstrated without any API calls. Adding a key automatically switches to
+    the real AI agent — no code change.
+  </div>
+</div>
+
+<!-- ============ 14. CONCLUSION ============ -->
+<div class="section">
+  <h2>14. Conclusion</h2>
+  <p>
+    The AI Interactive Learning Demonstrator shows a compelling idea in working form: an AI tutor that
+    responds to a student's confusion by <strong>building a custom interactive experiment</strong>
+    rather than reciting an explanation. The backend pipeline — session management, a security-hardened
+    AI code generator, and a self-correcting validation loop — is implemented and tested. What remains
+    is the visible surface (frontend) and the voice front door, both of which plug into the already-proven
+    core.
+  </p>
+  <p class="muted" style="margin-top:20px; text-align:center; border-top:1px solid var(--line); padding-top:12px;">
+    End of report · AI Interactive Learning Demonstrator
+  </p>
+</div>
+
+</body>
+</html>

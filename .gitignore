@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# runtime session data (filesystem storage)
+sessions/
+
+# env
+.env
+.env.local
+
+# build output
+dist/
+build/
+
+# logs
+*.log
+npm-debug.log*
+
+# editor / OS
+.DS_Store
+.vscode/
+.idea/
