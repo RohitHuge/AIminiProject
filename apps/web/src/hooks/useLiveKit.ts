@@ -15,6 +15,9 @@ export function useLiveKit() {
   const [state, setState] = useState<ConnState>('idle');
   const [agentState, setAgentState] = useState<AgentState>(null);
   const [error, setError] = useState<string | null>(null);
+  // True when the browser is blocking audio autoplay — the UI should offer a
+  // tap-to-enable control (which calls enableAudio within a fresh gesture).
+  const [audioBlocked, setAudioBlocked] = useState(false);
   const roomRef = useRef<Room | null>(null);
   const audioEls = useRef<HTMLAudioElement[]>([]);
 
@@ -25,6 +28,19 @@ export function useLiveKit() {
     audioEls.current = [];
     setState('idle');
     setAgentState(null);
+    setAudioBlocked(false);
+  }, []);
+
+  /** Start audio playback. Must be called within a user gesture when blocked. */
+  const enableAudio = useCallback(async () => {
+    const room = roomRef.current;
+    if (!room) return;
+    try {
+      await room.startAudio();
+      setAudioBlocked(!room.canPlaybackAudio);
+    } catch {
+      setAudioBlocked(true);
+    }
   }, []);
 
   const connect = useCallback(async (sessionId: string) => {
@@ -44,6 +60,11 @@ export function useLiveKit() {
         }
       });
 
+      // Surfaces when the browser (un)blocks audio playback.
+      room.on(RoomEvent.AudioPlaybackStatusChanged, () => {
+        setAudioBlocked(!room.canPlaybackAudio);
+      });
+
       const readAgentState = (p: RemoteParticipant) => {
         const s = p.attributes?.['lk.agent.state'];
         if (s === 'listening' || s === 'thinking' || s === 'speaking') setAgentState(s);
@@ -56,6 +77,17 @@ export function useLiveKit() {
 
       await room.connect(url, token);
       await room.localParticipant.setMicrophoneEnabled(true);
+
+      // Chrome blocks audio autoplay until the app starts it. connect() runs from
+      // the "Start talking" click, so the page has user activation — start audio
+      // now so the agent's spoken greeting is actually audible.
+      try {
+        await room.startAudio();
+      } catch {
+        /* handled below via canPlaybackAudio */
+      }
+      setAudioBlocked(!room.canPlaybackAudio);
+
       room.remoteParticipants.forEach(readAgentState);
       setState('connected');
       setAgentState('listening');
@@ -67,5 +99,5 @@ export function useLiveKit() {
 
   useEffect(() => () => disconnect(), [disconnect]);
 
-  return { state, agentState, error, connect, disconnect };
+  return { state, agentState, error, audioBlocked, connect, disconnect, enableAudio };
 }

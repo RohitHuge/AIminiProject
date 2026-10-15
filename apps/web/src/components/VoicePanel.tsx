@@ -10,7 +10,7 @@ import { useToast } from '../hooks/useToast';
  * backend reports voice is configured — otherwise the typed BriefForm is used.
  */
 export function VoicePanel({ sessionId }: { sessionId: string }) {
-  const { state, agentState, error, connect, disconnect } = useLiveKit();
+  const { state, agentState, error, audioBlocked, connect, disconnect, enableAudio } = useLiveKit();
   const toast = useToast();
 
   useEffect(() => {
@@ -23,6 +23,15 @@ export function VoicePanel({ sessionId }: { sessionId: string }) {
     return (
       <div className="flex flex-col items-center gap-4">
         <VoiceOrb agentState={agentState} />
+        {audioBlocked && (
+          <button
+            type="button"
+            onClick={enableAudio}
+            className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-400"
+          >
+            🔊 Tap to enable sound
+          </button>
+        )}
         <p className="text-center text-xs text-slate-400">
           Talk about what you're struggling with. I'll build a demonstration when I understand.
         </p>
